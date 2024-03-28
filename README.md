@@ -21,7 +21,4 @@ Run the following command in the root directory of your Node-RED install
 Screenshot
 ----------
 
-![screenshot](https://github.com/njh/node-red-contrib-mapper/raw/master/screenshot.png)
-
-
-[Node-RED]:  http://nodered.org/
+![screenshot](https://raw.githubusercontent.com/and-rom/node-red-contrib-mapper/main/screenshot.png)
