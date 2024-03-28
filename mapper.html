@@ -1,4 +1,5 @@
 <!--
+  Copyright 2024 And Rom
   Copyright 2014 Nicholas Humfrey
   Copyright 2013 IBM Corp.
 
@@ -15,113 +16,147 @@
   limitations under the License.
 -->
 
-<script type="text/x-red" data-template-name="mapper">
-    <div class="form-row">
-        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
-        <input type="text" id="node-input-name" placeholder="Name">
-    </div>
-    <div class="form-row" style="padding-top:10px;">
-        Map the contents of msg.<input type="text" id="node-input-property" style="width: 200px;"/>
-    </div>
-    <div class="form-row">
-        <div id="node-input-mapping-container-div" style="border-radius: 5px; height: 320px; padding: 5px; border: 1px solid #ccc; overflow-y:scroll;">
-        <ol id="node-input-mapping-container" style=" list-style-type:none; margin: 0;">
-        </ol>
-        </div>
-        <a href="#" class="btn btn-mini" id="node-input-add-mapping" style="margin-top: 4px;"><i class="fa fa-plus"></i> Add</a>
-    </div>
-    <div class="form-row" id="node-reg-row">
-        <input type="checkbox" id="node-input-passthrough" style="display: inline-block; width: auto; vertical-align: top;">
-        <label for="node-input-passthrough" style="width: 90%;">Pass through if no match</label>
-    </div>
-</script>
-
-<script type="text/x-red" data-help-name="mapper">
-    <p>Node to map the contents of a message property from one value to another.</p>
-    <p>The message property is compared against each of the values in the left-hand column
-       and if there is a match, it is changed to the value in the right-hand column.</p>
-    <p>By default, the <b>msg.payload</b> is the property that is operated on, but this 
-       can be changed to other properties, such as the topic name.</p>
-    <p>If the message does not match any of the values in the mapping, the message can 
-       either be ignored or passed through unmodified.</p>
-</script>
-
 <script type="text/javascript">
+(function() {
     RED.nodes.registerType('mapper', {
-        color: "#E2D96E",
         category: 'function',
         defaults: {
             name: {value:""},
             property: {value:"payload", required:true},
-            map: {value:[{search:"",replace:""}]},
+            map: {value:[{search:"",replace:"",searchType:"str",replaceType:"str"}], validate:function(v, opt) {
+                    let msg;
+                    const errors = [];
+                    for (let i=0;i<v.length;i++) {
+                        opt = { label: this._('label.rule')+' '+(i+1)+', '+this._('label.field')+' '+this._('label.search')};
+                        if ((msg = RED.utils.validateTypedProperty(v[i].search,v[i].searchType,opt)) !== true) {
+                            errors.push(msg);
+                        }
+                        opt = { label: this._('label.rule')+' '+(i+1)+', '+this._('label.field')+' '+this._('label.replace')};
+                        if ((msg = RED.utils.validateTypedProperty(v[i].replace,v[i].replaceType,opt)) !== true) {
+                            errors.push(msg);
+                        }
+                    }
+                    if (errors.length) {
+                        return errors
+                    }
+                    return true;
+                }
+            },
             passthrough: {value:false},
         },
         inputs: 1,
         outputs: 1,
-        icon: "mapper.png",
         label: function() {
             return this.name||"mapper";
         },
+        color: "#E2D96E",
+        icon: "mapper.png",
         oneditprepare: function() {
+            let node = this;
 
-            function generateRow(mapping) {
-                var container = $('<li/>',{style:"margin:0; padding:8px 0px; border-bottom: 1px solid #ccc;"});
-                var row = $('<div/>').appendTo(container);
-                var searchField = $('<input/>',{class:"node-input-mapping-search",type:"text",style:"margin-left: 5px; width: 40%;",placeholder:"Search"}).appendTo(row);
-                $('<span/>',{class:"fa fa-arrow-right",style:"margin: 5px"}).appendTo(row);
-                var replaceField = $('<input/>',{class:"node-input-mapping-replace",type:"text",style:"width: 40%;",placeholder:"Replace"}).appendTo(row);
-                searchField.val(mapping.search);
-                replaceField.val(mapping.replace);
+            $("#node-input-property").typedInput({
+                type:"msg",
+                types:["msg"],
+                typeField: "#node-input-property-type"
+            });
 
-                var deleteButton = $('<a/>',{href:"#",class:"btn btn-mini", style:"margin-left: 5px;"}).appendTo(row);
-                $('<i/>',{class:"fa fa-remove"}).appendTo(deleteButton);
-
-                deleteButton.click(function() {
-                    container.css({"background":"#fee"});
-                    container.fadeOut(300, function() {
-                        $(this).remove();
+            $('#node-input-mapping-container').css('min-height','150px').css('min-width','450px').editableList({
+                addItem: function(container,i,opt) {
+                    container.css({
+                        overflow: 'hidden',
+                        whiteSpace: 'nowrap',
+                        display: "flex",
+                        "align-items":"center"
                     });
-                });
+                    var inputRows = $('<div></div>',{style:"flex-grow:1"}).appendTo(container);
+                    var row = $('<div></div>',{style:"display: flex;"}).appendTo(inputRows);
+                    var searchField = $('<input/>', {
+                        class: "node-input-mapping-search",
+                        type: "text",
+                        style: "width: 100%;",
+                        placeholder: node._("label.search"),
+                        }).appendTo(row);
+                    searchField.prop('required',true);
+                    searchField.typedInput({type:'str',types:['str','num','bool']});
+                    searchField.typedInput('value', opt.search);
+                    searchField.typedInput('type', opt.searchType);
 
-                $("#node-input-mapping-container").append(container);
-            }
+                    $('<span/>', {
+                        class:"fa fa-arrow-right",
+                        style:"margin: 5px; display: inline-flex; flex-wrap: wrap; align-content: center;"
+                    }).appendTo(row);
 
-            $("#node-input-add-mapping").click(function() {
-                generateRow({search:"",replace:""});
-                $("#node-input-mapping-container-div").scrollTop($("#node-input-mapping-container-div").get(0).scrollHeight);
+                    var replaceField = $('<input/>', {
+                        class:"node-input-mapping-replace",
+                        type:"text",
+                        style:"width: 100%",
+                        placeholder: node._("label.replace"),
+                        }).appendTo(row);
+                    replaceField.typedInput({type:'str',types:['str','num','bool']});
+                    replaceField.typedInput('value', opt.replace);
+                    replaceField.typedInput('type', opt.replaceType);
+                },
+                removable: true,
+                sortable: true
             });
 
             for (var i=0;i<this.map.length;i++) {
                 var mapping = this.map[i];
-                generateRow(mapping);
+                $("#node-input-mapping-container").editableList('addItem',mapping);
             }
-
-            function mapperDialogResize(ev,ui) {
-                $("#node-input-mapping-container-div").css("height",(ui.size.height-300)+"px");
-            };
-
-            $( "#dialog" ).on("dialogresize", mapperDialogResize);
-            $( "#dialog" ).one("dialogopen", function(ev) {
-                var size = $( "#dialog" ).dialog('option','sizeCache-mapper');
-                if (size) {
-                    mapperDialogResize(null,{size:size});
-                }
-            });
-            $( "#dialog" ).one("dialogclose", function(ev,ui) {
-                $( "#dialog" ).off("dialogresize",mapperDialogResize);
-            });
         },
         oneditsave: function() {
-            var map = $("#node-input-mapping-container").children();
+            var map = $("#node-input-mapping-container").editableList('items');
             var node = this;
             node.map = [];
             map.each(function(i) {
                 var mapping = $(this);
                 node.map.push({
-                    search: mapping.find(".node-input-mapping-search").val(),
-                    replace: mapping.find(".node-input-mapping-replace").val(),
+                    search: mapping.find(".node-input-mapping-search").typedInput('value'),
+                    replace: mapping.find(".node-input-mapping-replace").typedInput('value'),
+                    searchType: mapping.find(".node-input-mapping-search").typedInput('type'),
+                    replaceType: mapping.find(".node-input-mapping-replace").typedInput('type'),
                 });
             });
+        },
+        oneditresize: function(size) {
+            var rows = $("#dialog-form>div:not(.node-input-mapping-container-row)");
+            var height = size.height;
+            for (var i=0; i<rows.length; i++) {
+                height -= $(rows[i]).outerHeight(true);
+            }
+            var editorRow = $("#dialog-form>div.node-input-mapping-container-row");
+            height -= (parseInt(editorRow.css("marginTop"))+parseInt(editorRow.css("marginBottom")));
+            height += 16;
+            $("#node-input-mapping-container").editableList('height',height);
         }
     });
+})();
+</script>
+
+<script type="text/html" data-template-name="mapper">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="label.name"></span></label>
+        <input type="text" id="node-input-name" style="width: calc(100% - 105px)" data-i18n="[placeholder]label.name"/>
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-property"><i class="fa fa-ellipsis-h"></i> <span data-i18n="label.property"></span></label>
+        <input type="text" id="node-input-property" style="width: calc(100% - 105px)"/>
+        <input type="hidden" id="node-input-property-type"/>
+    </div>
+
+    <div class="form-row" style="margin-bottom:0;">
+        <label><i class="fa fa-list"></i> <span data-i18n="label.rules"></span></label>
+    </div>
+
+
+    <div class="form-row node-input-mapping-container-row">
+        <ol id="node-input-mapping-container"></ol>
+    </div>
+
+    <div class="form-row">
+        <input type="checkbox" id="node-input-passthrough" style="width: auto; vertical-align: top;">
+        <label for="node-input-passthrough" style="width: auto;"><span data-i18n="label.passthrough"></span></label></input>
+    </div>
 </script>

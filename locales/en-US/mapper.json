@@ -1,0 +1,13 @@
+{
+    "label": {
+        "name": "Name",
+        "property": "Property",
+        "passthrough": "Pass through if no match",
+        "search": "Search",
+        "replace": "Replace",
+        "rules": "Rules",
+        "rule": "rule",
+        "field": "field"
+
+    }
+}

@@ -1,4 +1,5 @@
 /**
+ * Copyright 2024 And Rom
  * Copyright 2014 Nicholas Humfrey
  * Copyright 2013 IBM Corp.
  *
@@ -18,42 +19,75 @@
 module.exports = function(RED) {
     "use strict";
 
-    function MapperNode(n) {
-        RED.nodes.createNode(this, n);
-        this.property = n.property;
-        this.map = n.map;
-        this.passthrough = n.passthrough;
-        var propertyParts = n.property.split(".");
-        var node = this;
+    function MapperNode(config) {
+        RED.nodes.createNode(this, config);
 
-        var mapping = {};
-        for (var i=0; i<node.map.length; i+=1) {
-            var row = node.map[i];
-            mapping[row['search']] = row['replace'];
+        let node = this;
+
+        node.property = config.property;
+        node.map = config.map;
+        node.passthrough = config.passthrough;
+        let propertyParts = config.property.split(".");
+
+        function cast(val, type) {
+            switch(type) {
+            case 'num':
+                return Number(val);
+                break;
+            case 'bool':
+                return val === "true";
+                break;
+            default:
+                return val;
+            }
         }
 
-        this.on('input', function (msg) {
+        let search = [];
+        let replace = [];
+        for (let i=0; i<node.map.length; i+=1) {
+            search.push(cast(node.map[i].search, node.map[i].searchType));
+            replace.push(cast(node.map[i].replace, node.map[i].replaceType));
+        }
+
+        this.on('input', function (msg, send, done) {
+            send = send || function() { node.send.apply(node,arguments) };
+
+            let err;
             try {
-                var depth = 0;
-                var found = false;
-                propertyParts.reduce(function(obj, i) {
-                    if (++depth === propertyParts.length) {
-                        var value = obj[i];
-                        if (value && mapping[value]) {
-                            obj[i] = mapping[value];
-                            found = true;
+                let depth = 0;
+                let found = false;
+                let idx;
+                propertyParts.reduce(function(obj, part) {
+                    if (obj.hasOwnProperty(part)) {
+                        if (++depth === propertyParts.length) {
+                            if ((idx = search.indexOf(obj[part])) !== -1) {
+                                found = true;
+                                obj[part] = replace[idx];
+                            }
+                        } else {
+                            return obj[part];
                         }
                     } else {
-                        return obj[i];
+                        ++depth;
+                        return {};
                     }
                 }, msg);
 
                 if (found || node.passthrough) {
-                    this.send(msg);
+                    send(msg);
                 }
             } catch(err) {
-                node.warn(err);
+                console.log(err);
             }
+
+            if (err) {
+                if (done) {
+                    done(err);
+                } else {
+                    node.error(err, msg);
+                }
+            }
+
         });
     }
     RED.nodes.registerType("mapper", MapperNode);
