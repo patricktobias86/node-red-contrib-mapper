@@ -1,5 +1,5 @@
 {
-    "name"         : "@androm/node-red-contrib-mapper",
+    "name"         : "@and-rom/node-red-contrib-mapper",
     "version"      : "0.0.2",
     "description"  : "Map the contents of a message property from one value to another",
     "main": "index.js",
