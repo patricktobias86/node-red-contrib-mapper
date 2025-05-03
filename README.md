@@ -16,11 +16,6 @@ Run the following command in the root directory of your Node-RED install
 
     npm install @patricktobias86/node-red-contrib-mapper
 
-Screenshot
-----------
-
-![screenshot](https://raw.githubusercontent.com/patricktobias86/node-red-contrib-mapper/main/screenshot.png)
-
 Usage Examples
 --------------
 
