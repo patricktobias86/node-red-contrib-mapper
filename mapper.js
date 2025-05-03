@@ -42,11 +42,17 @@ module.exports = function(RED) {
             }
         }
 
-        let search = [];
-        let replace = [];
+        let mappingGroups = [];
         for (let i=0; i<node.map.length; i+=1) {
-            search.push(cast(node.map[i].search, node.map[i].searchType));
-            replace.push(cast(node.map[i].replace, node.map[i].replaceType));
+            let searchItems = node.map[i].search.split(",").map(s => {
+                if (node.map[i].searchType === 're') {
+                    return new RegExp(s.trim());
+                } else {
+                    return cast(s.trim(), node.map[i].searchType);
+                }
+            });
+            let replaceItem = cast(node.map[i].replace, node.map[i].replaceType);
+            mappingGroups.push({ searchValues: searchItems, replaceValue: replaceItem });
         }
 
         this.on('input', function (msg, send, done) {
@@ -60,9 +66,20 @@ module.exports = function(RED) {
                 propertyParts.reduce(function(obj, part) {
                     if (obj.hasOwnProperty(part)) {
                         if (++depth === propertyParts.length) {
-                            if ((idx = search.indexOf(obj[part])) !== -1) {
+                            let matched = false;
+                            for (let group of mappingGroups) {
+                                for (let searchVal of group.searchValues) {
+                                    if ((searchVal instanceof RegExp && searchVal.test(obj[part])) ||
+                                        (!(searchVal instanceof RegExp) && searchVal === obj[part])) {
+                                        obj[part] = group.replaceValue;
+                                        matched = true;
+                                        break;
+                                    }
+                                }
+                                if (matched) break;
+                            }
+                            if (matched) {
                                 found = true;
-                                obj[part] = replace[idx];
                             }
                         } else {
                             return obj[part];

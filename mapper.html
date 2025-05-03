@@ -74,10 +74,10 @@
                         class: "node-input-mapping-search",
                         type: "text",
                         style: "width: 100%;",
-                        placeholder: node._("label.search"),
+                        placeholder: node._("label.search") + " (comma-separated, or regex)",
                         }).appendTo(row);
                     searchField.prop('required',true);
-                    searchField.typedInput({type:'str',types:['str','num','bool']});
+                    searchField.typedInput({type:'str',types:['str','num','bool','re']});
                     searchField.typedInput('value', opt.search);
                     searchField.typedInput('type', opt.searchType);
 
@@ -153,6 +153,14 @@
 
     <div class="form-row node-input-mapping-container-row">
         <ol id="node-input-mapping-container"></ol>
+    </div>
+
+    <div class="form-tips" style="margin-top: 10px; padding: 8px; background: #f9f9f9; border: 1px solid #ddd;">
+        <b>Examples:</b><br>
+        • <b>Multiple values:</b> <code>apple, banana, orange</code> → <code>fruit</code><br>
+        • <b>Regex:</b> <code>^error_\\d+</code> (type: re) → <code>general_error</code><br>
+        • <b>Mixed rules:</b> Add one rule for <code>yes, y, true</code> → <code>confirmed</code>, another regex rule <code>^no_.*</code> → <code>rejected</code><br>
+        <i>Tip:</i> For regex, use the <b>re</b> type and write one regex per rule.
     </div>
 
     <div class="form-row">

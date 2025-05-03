@@ -1,14 +1,14 @@
 {
-    "name"         : "@and-rom/node-red-contrib-mapper",
-    "version"      : "0.0.2",
+    "name"         : "@patricktobias86/node-red-contrib-mapper",
+    "version"      : "0.0.3",
     "description"  : "Map the contents of a message property from one value to another",
-    "main": "index.js",
+    "main": "mapper.js",
     "scripts": {
         "test": "echo \"no test specified\""
     },
     "repository"   : {
         "type":"git",
-        "url":"https://github.com/and-rom/node-red-contrib-mapper.git"
+        "url":"https://github.com/patricktobias86/node-red-contrib-mapper.git"
     },
     "dependencies": {},
     "engines": {
@@ -25,10 +25,10 @@
             "mapper": "mapper.js"
         }
     },
-    "author": "Nicholas Humfrey",
+    "author": "Patrick Tobias",
     "license": "Apache",
     "bugs": {
-        "url": "https://github.com/and-rom/node-red-contrib-mapper/issues"
+        "url": "https://github.com/patricktobias86/node-red-contrib-mapper/issues"
     },
-    "homepage": "http://github.com/and-rom/node-red-contrib-mapper"
+    "homepage": "http://github.com/patricktobias86/node-red-contrib-mapper"
 }
