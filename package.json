@@ -25,6 +25,10 @@
             "mapper": "mapper.js"
         }
     },
+    "publishConfig": {
+        "access": "public",
+        "registry": "https://registry.npmjs.org"
+    },
     "author": "Patrick Tobias",
     "license": "Apache",
     "bugs": {
