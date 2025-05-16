@@ -52,6 +52,7 @@
                     });
                     var inputRows = $('<div></div>',{style:"flex-grow:1"}).appendTo(container);
                     var row = $('<div></div>',{style:"display: flex;"}).appendTo(inputRows);
+                    $('<div style="width: 100%"></div>').appendTo(inputRows);
                     var searchField = $('<input/>', {
                         class: "node-input-mapping-search",
                         type: "text",
@@ -71,6 +72,8 @@
                         class: 'node-input-preview',
                         style: 'font-size: 0.8em; color: #555; margin-top: 2px;'
                     }).insertAfter(searchField);
+                    $('<div style="width: 100%"></div>').insertAfter(searchField);
+                    searchPreview.hide();
 
                     searchField.on("change", function () {
                         let val = searchField.typedInput('value');
@@ -84,16 +87,18 @@
                                 let re = new RegExp(val);
                                 searchField.css("border-color", "green");
                                 searchField.attr("title", "Valid regex: " + val);
-                                searchPreview.text("Preview: " + re.toString());
+                                searchPreview.text("Regex matches: " + val);
+                                searchPreview.show();
                             } catch (e) {
                                 searchField.addClass("input-error");
                                 searchField.css("border-color", "red");
                                 searchField.attr("title", "Invalid regex: " + e.message);
                             }
                         } else {
+                            searchPreview.hide();
                             searchField.css("border-color", "");
                             searchField.attr("title", "");
-                            searchPreview.text("Value: " + val);
+                            searchPreview.hide();
                         }
                     });
 
@@ -120,6 +125,8 @@
                         class: 'node-input-preview',
                         style: 'font-size: 0.8em; color: #555; margin-top: 2px;'
                     }).insertAfter(replaceField);
+                    $('<div style="width: 100%"></div>').insertAfter(replaceField);
+                    replacePreview.hide();
 
                     replaceField.on("change", function () {
                         let val = replaceField.typedInput('value');
@@ -133,7 +140,8 @@
                                 let re = new RegExp(val);
                                 replaceField.css("border-color", "green");
                                 replaceField.attr("title", "Valid regex: " + val);
-                                replacePreview.text("Preview: " + re.toString());
+                                replacePreview.text("Regex replacement: " + val);
+                                replacePreview.show();
                             } catch (e) {
                                 replaceField.addClass("input-error");
                                 replaceField.css("border-color", "red");
@@ -142,7 +150,7 @@
                         } else {
                             replaceField.css("border-color", "");
                             replaceField.attr("title", "");
-                            replacePreview.text("Value: " + val);
+                            replacePreview.hide();
                         }
                     });
                 },
