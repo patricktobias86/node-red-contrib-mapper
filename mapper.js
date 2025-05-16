@@ -1,21 +1,3 @@
-/**
- * Copyright 2024 And Rom
- * Copyright 2014 Nicholas Humfrey
- * Copyright 2013 IBM Corp.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- **/
-
 module.exports = function(RED) {
     "use strict";
 
@@ -45,14 +27,31 @@ module.exports = function(RED) {
         let mappingGroups = [];
         for (let i=0; i<node.map.length; i+=1) {
             let searchItems = node.map[i].search.split(",").map(s => {
-                if (node.map[i].searchType === 're') {
-                    return new RegExp(s.trim());
+                let searchVal = s.trim();
+                let type = node.map[i].searchType;
+                if (type === 're') {
+                    return new RegExp(searchVal);
+                } else if (['msg', 'flow', 'global'].includes(type)) {
+                    return RED.util.evaluateNodeProperty(searchVal, type, node, {});
+                } else if (type === 'jsonata') {
+                    try {
+                        let expr = RED.util.prepareJSONataExpression(searchVal, node);
+                        return RED.util.evaluateJSONataExpression(expr, {});
+                    } catch (e) {
+                        node.warn("JSONata error in search: " + e.message);
+                        return null;
+                    }
+                } else if (type === 'env') {
+                    return process.env[searchVal] || "";
                 } else {
-                    return cast(s.trim(), node.map[i].searchType);
+                    return cast(searchVal, type);
                 }
             });
-            let replaceItem = cast(node.map[i].replace, node.map[i].replaceType);
-            mappingGroups.push({ searchValues: searchItems, replaceValue: replaceItem });
+            mappingGroups.push({
+                searchValues: searchItems,
+                replaceValue: node.map[i].replace,
+                replaceType: node.map[i].replaceType
+            });
         }
 
         this.on('input', function (msg, send, done) {
@@ -71,7 +70,39 @@ module.exports = function(RED) {
                                 for (let searchVal of group.searchValues) {
                                     if ((searchVal instanceof RegExp && searchVal.test(obj[part])) ||
                                         (!(searchVal instanceof RegExp) && searchVal === obj[part])) {
-                                        obj[part] = group.replaceValue;
+
+                                        let replacement = group.replaceValue;
+                                        let replaceType = group.replaceType;
+
+                                        switch (replaceType) {
+                                            case 'msg':
+                                            case 'flow':
+                                            case 'global':
+                                                replacement = RED.util.evaluateNodeProperty(replacement, replaceType, node, msg);
+                                                break;
+                                            case 'jsonata':
+                                                try {
+                                                    let expr = RED.util.prepareJSONataExpression(replacement, node);
+                                                    replacement = RED.util.evaluateJSONataExpression(expr, msg);
+                                                } catch (e) {
+                                                    node.warn("JSONata error: " + e.message);
+                                                    replacement = null;
+                                                }
+                                                break;
+                                            case 'env':
+                                                replacement = process.env[replacement] || "";
+                                                break;
+                                            case 're':
+                                                try {
+                                                    replacement = new RegExp(replacement);
+                                                } catch (e) {
+                                                    node.warn("Invalid RegExp in replace: " + e.message);
+                                                    replacement = null;
+                                                }
+                                                break;
+                                        }
+
+                                        obj[part] = replacement;
                                         matched = true;
                                         break;
                                     }

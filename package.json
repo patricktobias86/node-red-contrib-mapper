@@ -1,6 +1,6 @@
 {
     "name"         : "@patricktobias86/node-red-contrib-mapper",
-    "version"      : "0.0.6",
+    "version"      : "0.1.0",
     "description"  : "Map the contents of a message property from one value to another, supporting multiple mapped values and regular expressions.",
     "main": "mapper.js",
     "scripts": {

@@ -7,7 +7,15 @@
         "replace": "Replace",
         "rules": "Rules",
         "rule": "rule",
-        "field": "field"
-
+        "field": "field",
+        "msg": "Message",
+        "flow": "Flow",
+        "global": "Global",
+        "str": "String",
+        "num": "Number",
+        "bool": "Boolean",
+        "jsonata": "Expression",
+        "env": "Environment",
+        "re": "Regular Expression"
     }
 }
